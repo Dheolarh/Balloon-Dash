@@ -4,60 +4,52 @@ using UnityEngine;
 
 public class PlayerControllerX : MonoBehaviour
 {
-    public bool gameOver;
-
-    public float floatForce;
-    private float gravityModifier = 1.5f;
-    private Rigidbody playerRb;
-
-    public ParticleSystem explosionParticle;
-    public ParticleSystem fireworksParticle;
-
-    private AudioSource playerAudio;
-    public AudioClip moneySound;
-    public AudioClip explodeSound;
+    public bool gameOver = false;
+    public ParticleSystem _bombParticle;
+    public ParticleSystem _coinParticle;
+    private AudioSource _playerAD;
+    public AudioClip _coinSound;
+    public AudioClip _bombSound;
+    public float gravityModifier;
+    public float speed;
 
 
     // Start is called before the first frame update
     void Start()
     {
-        Physics.gravity *= gravityModifier;
-        playerAudio = GetComponent<AudioSource>();
-
-        // Apply a small upward force at the start of the game
-        playerRb.AddForce(Vector3.up * 5, ForceMode.Impulse);
-
+        _playerAD = GetComponent<AudioSource>();
+        Physics.gravity *= (gravityModifier * Time.deltaTime);
     }
 
     // Update is called once per frame
     void Update()
     {
-        // While space is pressed and player is low enough, float up
-        if (Input.GetKey(KeyCode.Space) && !gameOver)
+        float minYRange = 2.5f;
+        float maxYRange = 14.5f;
+        bool verticalMovement = Input.GetKey(KeyCode.Space);
+        if (verticalMovement && !gameOver)
         {
-            playerRb.AddForce(Vector3.up * floatForce);
+            transform.Translate(Vector3.up * Time.deltaTime * speed);
         }
+
+        float clampY = Mathf.Clamp(transform.position.y, minYRange, maxYRange);
+        transform.position = new Vector3(transform.position.x,clampY, transform.position.z);
+
     }
 
     private void OnCollisionEnter(Collision other)
     {
-        // if player collides with bomb, explode and set gameOver to true
         if (other.gameObject.CompareTag("Bomb"))
         {
-            explosionParticle.Play();
-            playerAudio.PlayOneShot(explodeSound, 1.0f);
             gameOver = true;
-            Debug.Log("Game Over!");
+            _bombParticle.Play();
+            _playerAD.PlayOneShot(_bombSound, 1.0f);
             Destroy(other.gameObject);
-        } 
-
-        // if player collides with money, fireworks
-        else if (other.gameObject.CompareTag("Money"))
+        }
+        if (other.gameObject.CompareTag("Money"))
         {
-            fireworksParticle.Play();
-            playerAudio.PlayOneShot(moneySound, 1.0f);
-            Destroy(other.gameObject);
-
+            _coinParticle.Play();
+            _playerAD.PlayOneShot(_coinSound, 1.0f);
         }
 
     }
